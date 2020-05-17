@@ -68,10 +68,25 @@ func main() {
 		} else if _, ok := users[username]; !ok {
 			c.JSON(http.StatusNotFound, gin.H{"error": "user does not exist"})
 		} else {
+			if _, ok := tweets[username]; !ok {
+				tweets[username] = &tweet.UserTweets{Tweets: make([]tweet.Tweet, 0)}
+			}
 			tweet.By(tweet.SortByCreationTime).Sort(tweets[username])
 			c.JSON(http.StatusOK, gin.H{"result": tweets[username]})
 		}
 
+	})
+
+	router.GET("/timeline", func(c *gin.Context) {
+		username := c.Query("username")
+		if username == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "user name not specified"})
+		} else if _, ok := users[username]; !ok {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user does not exist"})
+		} else {
+			timeline := GetTimeLine(username)
+			c.JSON(http.StatusOK, gin.H{"result": timeline})
+		}
 	})
 
 	if err := router.Run(":8800"); err != nil {
