@@ -4,8 +4,8 @@ import (
 	"errors"
 	"fmt"
 	log "github.com/sirupsen/logrus"
-	"mini_tweeter/tweet"
-	"mini_tweeter/user"
+	"mini_twitter/tweet"
+	"mini_twitter/user"
 	"time"
 )
 

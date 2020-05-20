@@ -5,8 +5,8 @@ import (
 	"github.com/gin-gonic/gin"
 	"golang.org/x/crypto/bcrypt"
 	"log"
-	"mini_tweeter/tweet"
-	"mini_tweeter/user"
+	"mini_twitter/tweet"
+	"mini_twitter/user"
 	"net/http"
 )
 

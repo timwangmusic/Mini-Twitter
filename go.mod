@@ -1,4 +1,4 @@
-module mini_tweeter
+module mini_twitter
 
 go 1.14
 
