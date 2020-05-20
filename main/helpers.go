@@ -14,17 +14,10 @@ const (
 )
 
 func postTweet(username string, tweetText string) error {
-	if _, ok := users[username]; !ok {
-		return errors.New(fmt.Sprintf(UserNotExistErrorMsg, username))
-	}
 	t := tweet.Tweet{
 		User:      username,
 		Text:      tweetText,
 		CreatedAt: time.Now(),
-	}
-	if _, ok := tweets[username]; !ok {
-		tweets[username] = new(tweet.UserTweets)
-		tweets[username].Tweets = make([]tweet.Tweet, 0)
 	}
 	tweets[username].Tweets = append(tweets[username].Tweets, t)
 	return nil
@@ -44,5 +37,26 @@ func follow(followRequest user.Follow) error {
 		following[fromUser.Username] = make(map[string]bool)
 	}
 	following[fromUser.Username][toUser.Username] = true
+	return nil
+}
+
+func unfollow(unfollowRequest user.Follow) error {
+	fromUser, fromUserExist := users[unfollowRequest.From]
+	if !fromUserExist {
+		return errors.New(fmt.Sprintf(UserNotExistErrorMsg, unfollowRequest.From))
+	}
+	toUser, toUserExist := users[unfollowRequest.To]
+	if !toUserExist {
+		return errors.New(fmt.Sprintf(UserNotExistErrorMsg, unfollowRequest.To))
+	}
+	usersFollowing, ok := following[fromUser.Username]
+	if !ok {
+		return errors.New("user is not following any user")
+	}
+	_, userFollowingTargetUser := usersFollowing[toUser.Username]
+	if !userFollowingTargetUser {
+		return errors.New("user is not following the target user")
+	}
+	delete(usersFollowing, toUser.Username)
 	return nil
 }

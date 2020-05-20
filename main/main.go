@@ -10,6 +10,10 @@ import (
 	"net/http"
 )
 
+const (
+	UserDoesNotExist = "user %s does not exist"
+)
+
 var tweets map[string]*tweet.UserTweets  // user to tweets
 var users map[string]user.User           // user details
 var following map[string]map[string]bool // user to users the user is following
@@ -31,6 +35,10 @@ func main() {
 			encodedPsw, _ := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 			newUser.Password = string(encodedPsw)
 			users[newUser.Username] = newUser // make sure keys and usernames in records are the same
+
+			// create an empty slice when creating user so after an API verifies the user exists
+			// it does not to further check the tweets table
+			tweets[newUser.Username] = &tweet.UserTweets{Tweets: make([]tweet.Tweet, 0)}
 			c.JSON(http.StatusOK, gin.H{})
 		}
 	})
@@ -47,12 +55,26 @@ func main() {
 		}
 	})
 
+	router.POST("/unfollows", func(c *gin.Context) {
+		var f user.Follow
+		err := c.BindJSON(&f)
+		if err != nil {
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else if err = unfollow(f); err != nil {
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		} else {
+			c.JSON(http.StatusOK, fmt.Sprintf("%s unfollowed %s", f.From, f.To))
+		}
+	})
+
 	// create new tweet post
 	router.POST("/tweets", func(c *gin.Context) {
 		var newPost tweet.Tweet
 		err := c.BindJSON(&newPost)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else if _, userExists := users[newPost.User]; !userExists {
+			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf(UserDoesNotExist, newPost.User)})
 		} else if err = postTweet(newPost.User, newPost.Text); err == nil {
 			c.JSON(http.StatusOK, gin.H{"result": "Tweet post success!"})
 		} else {
@@ -60,29 +82,27 @@ func main() {
 		}
 	})
 
-	// get all the tweets from a specific user in reversed order of creation
-	router.GET("/tweets", func(c *gin.Context) {
-		username := c.Query("username")
+	// get all the tweets from a specific user in reversed order of post creation
+	router.GET("/tweets/:username", func(c *gin.Context) {
+		username := c.Param("username")
 		if username == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "user name not specified"})
 		} else if _, ok := users[username]; !ok {
-			c.JSON(http.StatusNotFound, gin.H{"error": "user does not exist"})
+			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf(UserDoesNotExist, username)})
 		} else {
-			if _, ok := tweets[username]; !ok {
-				tweets[username] = &tweet.UserTweets{Tweets: make([]tweet.Tweet, 0)}
-			}
 			tweet.By(tweet.SortByCreationTime).Sort(tweets[username])
 			c.JSON(http.StatusOK, gin.H{"result": tweets[username]})
 		}
 
 	})
 
-	router.GET("/timeline", func(c *gin.Context) {
-		username := c.Query("username")
+	// get timeline for a specific user in reversed order of post creation
+	router.GET("/timeline/:username", func(c *gin.Context) {
+		username := c.Param("username")
 		if username == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "user name not specified"})
 		} else if _, ok := users[username]; !ok {
-			c.JSON(http.StatusNotFound, gin.H{"error": "user does not exist"})
+			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf(UserDoesNotExist, username)})
 		} else {
 			timeline := GetTimeLine(username)
 			c.JSON(http.StatusOK, gin.H{"result": timeline})
