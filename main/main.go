@@ -1,13 +1,17 @@
 package main
 
 import (
+	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	_ "github.com/mattn/go-sqlite3"
 	"golang.org/x/crypto/bcrypt"
 	"log"
+	"mini_twitter/database"
 	"mini_twitter/tweet"
 	"mini_twitter/user"
 	"net/http"
+	"os"
 )
 
 const (
@@ -24,6 +28,21 @@ func main() {
 	following = make(map[string]map[string]bool)
 	router := gin.Default()
 
+	dbName := "database.db"
+	_, err := os.Stat(dbName)
+	if os.IsNotExist(err) {
+		_, creationErr := os.Create(dbName)
+		checkFatal(creationErr)
+	}
+
+	db, dbConnectionErr := sql.Open("sqlite3", dbName)
+	checkFatal(dbConnectionErr)
+
+	userTableCreationErr := database.CreateUsersTable(db)
+	checkErr(userTableCreationErr)
+
+	checkErr(database.LoadUsers(db, users))
+
 	log.Println("starting server")
 	// create new user
 	router.POST("/users", func(c *gin.Context) {
@@ -31,6 +50,8 @@ func main() {
 		err := c.BindJSON(&newUser)
 		if err != nil {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		} else if _, ok := users[newUser.Username]; ok {
+			c.JSON(http.StatusSeeOther, gin.H{"error": "user already exists"})
 		} else {
 			encodedPsw, _ := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
 			newUser.Password = string(encodedPsw)
@@ -39,6 +60,10 @@ func main() {
 			// create an empty slice when creating user so after an API verifies the user exists
 			// it does not to further check the tweets table
 			tweets[newUser.Username] = &tweet.UserTweets{Tweets: make([]tweet.Tweet, 0)}
+
+			// persist user in database
+			checkErr(database.CreateUser(db, newUser))
+
 			c.JSON(http.StatusOK, gin.H{})
 		}
 	})
