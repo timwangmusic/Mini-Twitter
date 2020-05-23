@@ -34,7 +34,8 @@ func CreateUser(db *sql.DB, user user.User) error {
 	return err
 }
 
-func LoadUsers(db *sql.DB, users map[string]user.User, tweets map[string]*tweet.UserTweets) error {
+func LoadUsers(db *sql.DB, users map[string]user.User, tweets map[string]*tweet.UserTweets,
+	follows map[string]map[string]bool) error {
 	rows, queryErr := db.Query("SELECT * FROM Users")
 	if queryErr != nil {
 		return queryErr
@@ -56,6 +57,10 @@ func LoadUsers(db *sql.DB, users map[string]user.User, tweets map[string]*tweet.
 				Tweets: make([]tweet.Tweet, 0),
 			}
 			if err := LoadTweets(db, username, tweets[username]); err != nil {
+				log.Error(err)
+			}
+			follows[username] = make(map[string]bool)
+			if err := LoadFollows(db, username, follows[username]); err != nil {
 				log.Error(err)
 			}
 		}

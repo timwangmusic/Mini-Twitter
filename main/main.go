@@ -38,13 +38,17 @@ func main() {
 	db, dbConnectionErr := sql.Open("sqlite3", dbName)
 	checkFatal(dbConnectionErr)
 
+	// create tables if not already exist
 	userTableCreationErr := database.CreateUsersTable(db)
 	checkErr(userTableCreationErr)
 
 	tweetsTableCreationErr := database.CreateTweetsTable(db)
 	checkErr(tweetsTableCreationErr)
 
-	checkErr(database.LoadUsers(db, users, tweets))
+	followsTableCreationErr := database.CreateFollowsTable(db)
+	checkErr(followsTableCreationErr)
+
+	checkErr(database.LoadUsers(db, users, tweets, following))
 
 	log.Println("starting server")
 	// create new user
@@ -79,6 +83,7 @@ func main() {
 		} else if err = follow(f); err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		} else {
+			checkErr(database.CreateFollow(db, f))
 			c.JSON(http.StatusOK, fmt.Sprintf("%s is following %s", f.From, f.To))
 		}
 	})
@@ -91,6 +96,7 @@ func main() {
 		} else if err = unfollow(f); err != nil {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		} else {
+			checkErr(database.UnfollowUser(db, f))
 			c.JSON(http.StatusOK, fmt.Sprintf("%s unfollowed %s", f.From, f.To))
 		}
 	})
@@ -141,5 +147,4 @@ func main() {
 	if err := router.Run(":8800"); err != nil {
 		log.Fatal(err)
 	}
-
 }
