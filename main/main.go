@@ -41,7 +41,10 @@ func main() {
 	userTableCreationErr := database.CreateUsersTable(db)
 	checkErr(userTableCreationErr)
 
-	checkErr(database.LoadUsers(db, users))
+	tweetsTableCreationErr := database.CreateTweetsTable(db)
+	checkErr(tweetsTableCreationErr)
+
+	checkErr(database.LoadUsers(db, users, tweets))
 
 	log.Println("starting server")
 	// create new user
@@ -100,7 +103,8 @@ func main() {
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		} else if _, userExists := users[newPost.User]; !userExists {
 			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf(UserDoesNotExist, newPost.User)})
-		} else if err = postTweet(newPost.User, newPost.Text); err == nil {
+		} else if err, newTweet := postTweet(newPost.User, newPost.Text); err == nil {
+			_ = database.CreateTweet(db, *newTweet)
 			c.JSON(http.StatusOK, gin.H{"result": "Tweet post success!"})
 		} else {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})

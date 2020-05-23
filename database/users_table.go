@@ -3,6 +3,7 @@ package database
 import (
 	"database/sql"
 	log "github.com/sirupsen/logrus"
+	"mini_twitter/tweet"
 	"mini_twitter/user"
 )
 
@@ -18,9 +19,9 @@ func CreateUsersTable(db *sql.DB) error {
 
 	stmt, err = db.Prepare("CREATE UNIQUE INDEX username ON Users (username)")
 	if err == nil {
-		_, err = stmt.Exec()
+		_, _ = stmt.Exec()
 	}
-	return nil  // ignore index creation error
+	return nil // ignore index creation error
 }
 
 func CreateUser(db *sql.DB, user user.User) error {
@@ -33,7 +34,7 @@ func CreateUser(db *sql.DB, user user.User) error {
 	return err
 }
 
-func LoadUsers(db *sql.DB, users map[string]user.User) error {
+func LoadUsers(db *sql.DB, users map[string]user.User, tweets map[string]*tweet.UserTweets) error {
 	rows, queryErr := db.Query("SELECT * FROM Users")
 	if queryErr != nil {
 		return queryErr
@@ -51,10 +52,15 @@ func LoadUsers(db *sql.DB, users map[string]user.User) error {
 				Password: password,
 				Email:    email,
 			}
+			tweets[username] = &tweet.UserTweets{
+				Tweets: make([]tweet.Tweet, 0),
+			}
+			if err := LoadTweets(db, username, tweets[username]); err != nil {
+				log.Error(err)
+			}
 		}
-
 	}
 
-	defer rows.Close()
+	_ = rows.Close()
 	return nil
 }
