@@ -13,14 +13,14 @@ const (
 	UserNotExistErrorMsg = "user %s does not exist"
 )
 
-func postTweet(username string, tweetText string) error {
+func postTweet(username string, tweetText string) (error, *tweet.Tweet) {
 	t := tweet.Tweet{
 		User:      username,
 		Text:      tweetText,
-		CreatedAt: time.Now(),
+		CreatedAt: time.Now().UTC(),
 	}
 	tweets[username].Tweets = append(tweets[username].Tweets, t)
-	return nil
+	return nil, &t
 }
 
 func follow(followRequest user.Follow) error {
