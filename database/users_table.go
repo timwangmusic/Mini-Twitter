@@ -3,8 +3,8 @@ package database
 import (
 	"database/sql"
 	log "github.com/sirupsen/logrus"
-	"mini_twitter/tweet"
-	"mini_twitter/user"
+	"github.com/weihesdlegend/mini_twitter/tweet"
+	"github.com/weihesdlegend/mini_twitter/user"
 )
 
 func CreateUsersTable(db *sql.DB) error {

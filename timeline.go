@@ -2,7 +2,7 @@ package main
 
 import (
 	"container/heap"
-	"mini_twitter/tweet"
+	"github.com/weihesdlegend/mini_twitter/tweet"
 )
 
 func GetTimeLine(user string) (timeline []tweet.Tweet) {

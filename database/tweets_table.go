@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	"github.com/sirupsen/logrus"
-	"mini_twitter/tweet"
+	"github.com/weihesdlegend/mini_twitter/tweet"
 	"time"
 )
 

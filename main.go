@@ -5,11 +5,11 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
+	log "github.com/sirupsen/logrus"
+	"github.com/weihesdlegend/mini_twitter/database"
+	"github.com/weihesdlegend/mini_twitter/tweet"
+	"github.com/weihesdlegend/mini_twitter/user"
 	"golang.org/x/crypto/bcrypt"
-	"log"
-	"mini_twitter/database"
-	"mini_twitter/tweet"
-	"mini_twitter/user"
 	"net/http"
 	"os"
 )
@@ -50,8 +50,8 @@ func main() {
 
 	checkErr(database.LoadUsers(db, users, tweets, following))
 
-	log.Println("starting server")
-	// create new user
+	log.Info("starting server")
+	// create a new user
 	router.POST("/users", func(c *gin.Context) {
 		var newUser user.User
 		err := c.BindJSON(&newUser)
@@ -71,7 +71,7 @@ func main() {
 			// persist user in database
 			checkErr(database.CreateUser(db, newUser))
 
-			c.JSON(http.StatusOK, gin.H{})
+			c.JSON(http.StatusCreated, gin.H{"user created": newUser.Username})
 		}
 	})
 

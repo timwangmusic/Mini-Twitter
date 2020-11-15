@@ -3,7 +3,7 @@ package database
 import (
 	"database/sql"
 	log "github.com/sirupsen/logrus"
-	"mini_twitter/user"
+	"github.com/weihesdlegend/mini_twitter/user"
 )
 
 func CreateFollowsTable(db *sql.DB) error {
