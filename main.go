@@ -144,7 +144,11 @@ func main() {
 		}
 	})
 
-	if err := router.Run(":8800"); err != nil {
+	port := os.Getenv("port")
+	if port == "" {
+		port = "8800"
+	}
+	if err := router.Run(":" + port); err != nil {
 		log.Fatal(err)
 	}
 }
