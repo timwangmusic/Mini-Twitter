@@ -144,7 +144,11 @@ func main() {
 		}
 	})
 
-	port := os.Getenv("port")
+	router.GET("/", func(c *gin.Context) {
+		c.String(http.StatusOK, "Welcome to use the Mini Twitter")
+	})
+
+	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8800"
 	}
