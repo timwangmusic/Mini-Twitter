@@ -11,7 +11,7 @@ type Tweet struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// all tweets from an user
+// UserTweets contains all the tweets from an user
 type UserTweets struct {
 	Tweets []Tweet `json:"tweets"`
 }
@@ -25,7 +25,7 @@ type By func(p1, p2 *Tweet) bool
 func (by By) Sort(tweets *UserTweets) {
 	sorter := &Sorter{
 		tweets: tweets,
-		by: by,
+		by:     by,
 	}
 	sort.Sort(sorter)
 }

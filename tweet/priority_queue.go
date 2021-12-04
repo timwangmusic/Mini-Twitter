@@ -18,7 +18,7 @@ func (pq *PriorityQueue) Push(item interface{}) {
 	*pq = append(*pq, item.(Tweet))
 }
 
-func (pq *PriorityQueue) Pop() (item interface{}){
+func (pq *PriorityQueue) Pop() (item interface{}) {
 	prev := *pq
 	n := len(prev)
 	res := prev[n-1]

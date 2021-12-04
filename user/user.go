@@ -8,5 +8,5 @@ type User struct {
 
 type Follow struct {
 	From string `json:"from" binding:"required"`
-	To string `json:"to" binding:"required"`
+	To   string `json:"to" binding:"required"`
 }

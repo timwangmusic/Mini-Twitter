@@ -2,7 +2,7 @@ package tweet
 
 type Sorter struct {
 	tweets *UserTweets
-	by func(t1, t2 *Tweet) bool
+	by     func(t1, t2 *Tweet) bool
 }
 
 func (s *Sorter) Len() int {

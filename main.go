@@ -128,9 +128,7 @@ func main() {
 			tweet.By(tweet.SortByCreationTime).Sort(tweets[username])
 			c.JSON(http.StatusOK, gin.H{"result": tweets[username]})
 		}
-
 	})
-
 	// get timeline for a specific user in reversed order of post creation
 	router.GET("/timeline/:username", func(c *gin.Context) {
 		username := c.Param("username")

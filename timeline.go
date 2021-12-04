@@ -10,7 +10,7 @@ func GetTimeLine(user string) (timeline []tweet.Tweet) {
 
 	pq := &tweet.PriorityQueue{}
 
-	userTweetIdxMap := make(map[string]int)  // user to tweet ID mapping
+	userTweetIdxMap := make(map[string]int) // user to tweet ID mapping
 	followingUsers, _ := following[user]
 	for u := range followingUsers {
 		if len(tweets[u].Tweets) > 0 {
