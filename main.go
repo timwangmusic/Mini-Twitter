@@ -28,7 +28,7 @@ func main() {
 	following = make(map[string]map[string]bool)
 	router := gin.Default()
 
-	dbName := "database.db"
+	dbName := "mini-twitter.db"
 	_, err := os.Stat(dbName)
 	if os.IsNotExist(err) {
 		_, creationErr := os.Create(dbName)
