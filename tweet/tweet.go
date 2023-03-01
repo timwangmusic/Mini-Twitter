@@ -6,8 +6,9 @@ import (
 )
 
 type Tweet struct {
-	Text      string    `json:"text"`
+	ID        string    `json:"id"`
 	User      string    `json:"user"`
+	Text      string    `json:"text"`
 	CreatedAt time.Time `json:"created_at"`
 }
 
