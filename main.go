@@ -110,7 +110,11 @@ func main() {
 		} else if _, userExists := users[newPost.User]; !userExists {
 			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf(UserDoesNotExist, newPost.User)})
 		} else if err, newTweet := postTweet(newPost.User, newPost.Text); err == nil {
-			_ = database.CreateTweet(db, *newTweet)
+			err = database.CreateTweet(db, newTweet)
+			if err != nil {
+				c.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
+				return
+			}
 			c.JSON(http.StatusOK, gin.H{"result": "Tweet post success!"})
 		} else {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
