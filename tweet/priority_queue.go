@@ -7,7 +7,7 @@ func (pq PriorityQueue) Len() int {
 }
 
 func (pq PriorityQueue) Less(i, j int) bool {
-	return pq[i].CreatedAt.Sub(pq[j].CreatedAt) >= 0
+	return pq[i].CreatedAt.After(pq[j].CreatedAt)
 }
 
 func (pq PriorityQueue) Swap(i, j int) {

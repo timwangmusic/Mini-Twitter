@@ -12,9 +12,9 @@ type Tweet struct {
 	CreatedAt time.Time `json:"created_at"`
 }
 
-// UserTweets contains all the tweets from an user
+// UserTweets contains all the tweets from a user
 type UserTweets struct {
-	Tweets []Tweet `json:"tweets"`
+	Tweets map[string]*Tweet `json:"tweets"`
 }
 
 var SortByCreationTime = func(t1, t2 *Tweet) bool {
@@ -23,7 +23,7 @@ var SortByCreationTime = func(t1, t2 *Tweet) bool {
 
 type By func(p1, p2 *Tweet) bool
 
-func (by By) Sort(tweets *UserTweets) {
+func (by By) Sort(tweets []*Tweet) {
 	sorter := &Sorter{
 		tweets: tweets,
 		by:     by,

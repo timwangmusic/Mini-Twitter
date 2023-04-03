@@ -10,13 +10,21 @@ func GetTimeLine(user string) (timeline []tweet.Tweet) {
 
 	pq := &tweet.PriorityQueue{}
 
-	userTweetIdxMap := make(map[string]int) // user to tweet ID mapping
+	userTweetIdxMap := make(map[string]int) // user to tweet index mapping
 	followingUsers, _ := following[user]
+
+	tweetsPerUser := make(map[string][]*tweet.Tweet)
 	for u := range followingUsers {
+		if _, ok := tweetsPerUser[u]; !ok {
+			tweetsPerUser[u] = make([]*tweet.Tweet, 0)
+		}
 		if len(tweets[u].Tweets) > 0 {
-			tweet.By(tweet.SortByCreationTime).Sort(tweets[u])
 			userTweetIdxMap[u] = 0
-			heap.Push(pq, tweets[u].Tweets[0])
+			for _, t := range tweets[u].Tweets {
+				tweetsPerUser[u] = append(tweetsPerUser[u], t)
+			}
+			tweet.By(tweet.SortByCreationTime).Sort(tweetsPerUser[u])
+			heap.Push(pq, *tweetsPerUser[u][0])
 		}
 	}
 
@@ -27,8 +35,8 @@ func GetTimeLine(user string) (timeline []tweet.Tweet) {
 		curUser := top.User
 		userTweetIdxMap[curUser] += 1
 		nextTweetIdx := userTweetIdxMap[curUser]
-		if userTweetIdxMap[curUser] < len(tweets[curUser].Tweets) {
-			heap.Push(pq, tweets[curUser].Tweets[nextTweetIdx])
+		if userTweetIdxMap[curUser] < len(tweetsPerUser[curUser]) {
+			heap.Push(pq, *tweetsPerUser[curUser][nextTweetIdx])
 		}
 	}
 

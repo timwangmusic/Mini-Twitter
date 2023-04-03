@@ -7,14 +7,18 @@ import (
 	"time"
 )
 
-func CreateTweet(db *sql.DB, tweet *tweet.Tweet) error {
+func CreateTweet(db *sql.DB, tweet *tweet.Tweet, tweets map[string]*tweet.UserTweets) error {
 	stmt, err := db.Prepare("INSERT INTO Tweets (id, text, username, created_at) values (?,?,?,?)")
 	if err != nil {
 		return err
 	}
 	logrus.Info("tweet creation time is:", tweet.CreatedAt.Format(time.RFC3339))
 	_, err = stmt.Exec(tweet.ID, tweet.Text, tweet.User, tweet.CreatedAt.Format(time.RFC3339))
-	return err
+	if err != nil {
+		return err
+	}
+	tweets[tweet.User].Tweets[tweet.ID] = tweet
+	return nil
 }
 
 func LoadTweets(db *sql.DB, username string, userTweets *tweet.UserTweets) error {
@@ -32,12 +36,12 @@ func LoadTweets(db *sql.DB, username string, userTweets *tweet.UserTweets) error
 		if err != nil {
 			logrus.Error(err)
 		}
-		userTweets.Tweets = append(userTweets.Tweets, tweet.Tweet{
+		userTweets.Tweets[id] = &tweet.Tweet{
 			ID:        id,
 			Text:      text,
 			User:      u,
 			CreatedAt: createdAt,
-		})
+		}
 	}
 	_ = rows.Close()
 	return nil

@@ -54,7 +54,7 @@ func LoadUsers(db *sql.DB, users map[string]user.User, tweets map[string]*tweet.
 				Email:    email,
 			}
 			tweets[username] = &tweet.UserTweets{
-				Tweets: make([]tweet.Tweet, 0),
+				Tweets: make(map[string]*tweet.Tweet),
 			}
 			if err := LoadTweets(db, username, tweets[username]); err != nil {
 				log.Error(err)

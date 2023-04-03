@@ -66,7 +66,7 @@ func main() {
 
 			// create an empty slice when creating user so after an API verifies the user exists
 			// it does not to further check the tweets table
-			tweets[newUser.Username] = &tweet.UserTweets{Tweets: make([]tweet.Tweet, 0)}
+			tweets[newUser.Username] = &tweet.UserTweets{Tweets: make(map[string]*tweet.Tweet)}
 
 			// persist user in database
 			checkErr(database.CreateUser(db, newUser))
@@ -110,7 +110,7 @@ func main() {
 		} else if _, userExists := users[newPost.User]; !userExists {
 			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf(UserDoesNotExist, newPost.User)})
 		} else if err, newTweet := postTweet(newPost.User, newPost.Text); err == nil {
-			err = database.CreateTweet(db, newTweet)
+			err = database.CreateTweet(db, newTweet, tweets)
 			if err != nil {
 				c.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
 				return
@@ -129,8 +129,12 @@ func main() {
 		} else if _, ok := users[username]; !ok {
 			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf(UserDoesNotExist, username)})
 		} else {
-			tweet.By(tweet.SortByCreationTime).Sort(tweets[username])
-			c.JSON(http.StatusOK, gin.H{"result": tweets[username]})
+			ts := make([]*tweet.Tweet, 0)
+			for _, t := range tweets[username].Tweets {
+				ts = append(ts, t)
+			}
+			tweet.By(tweet.SortByCreationTime).Sort(ts)
+			c.JSON(http.StatusOK, gin.H{"tweets": ts})
 		}
 	})
 	// get timeline for a specific user in reversed order of post creation

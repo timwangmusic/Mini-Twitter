@@ -14,14 +14,14 @@ const (
 )
 
 func postTweet(username string, tweetText string) (error, *tweet.Tweet) {
-	t := tweet.Tweet{
+	t := &tweet.Tweet{
 		ID:        util.GenID(),
 		User:      username,
 		Text:      tweetText,
 		CreatedAt: time.Now().UTC(),
 	}
-	tweets[username].Tweets = append(tweets[username].Tweets, t)
-	return nil, &t
+	tweets[username].Tweets[t.ID] = t
+	return nil, t
 }
 
 func follow(followRequest user.Follow) error {
