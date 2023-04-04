@@ -21,6 +21,15 @@ func CreateTweet(db *sql.DB, tweet *tweet.Tweet, tweets map[string]*tweet.UserTw
 	return nil
 }
 
+func DeleteTweet(db *sql.DB, id string, tweets map[string]*tweet.UserTweets, user string) error {
+	_, err := db.Exec("DELETE FROM Tweets WHERE id=?", id)
+	if err != nil {
+		return err
+	}
+	delete(tweets[user].Tweets, id)
+	return nil
+}
+
 func LoadTweets(db *sql.DB, username string, userTweets *tweet.UserTweets) error {
 	rows, err := db.Query("SELECT * FROM Tweets WHERE username=?", username)
 	if err != nil {

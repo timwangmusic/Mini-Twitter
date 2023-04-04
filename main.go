@@ -121,6 +121,22 @@ func main() {
 		}
 	})
 
+	router.DELETE("/tweets/:id", func(c *gin.Context) {
+		id := c.Param("id")
+		u := c.Query("user")
+		if u == "" {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "user name cannot be empty"})
+		}
+		if _, ok := tweets[u].Tweets[id]; !ok {
+			c.JSON(http.StatusUnauthorized, gin.H{"error": "only tweet owner can delete the tweet"})
+		}
+		if err = database.DeleteTweet(db, id, tweets, u); err != nil {
+			log.Error(err)
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "error while deleting tweet: " + err.Error()})
+		}
+		c.JSON(http.StatusOK, gin.H{})
+	})
+
 	// get all the tweets from a specific user in reversed order of post creation
 	router.GET("/tweets/:username", func(c *gin.Context) {
 		username := c.Param("username")
