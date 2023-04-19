@@ -51,6 +51,15 @@ func main() {
 	checkErr(database.LoadUsers(db, users, tweets, following))
 
 	log.Info("starting server")
+
+	router.GET("/users", func(c *gin.Context) {
+		var usernames []string
+		for name := range users {
+			usernames = append(usernames, name)
+		}
+		c.JSON(http.StatusOK, gin.H{"users": usernames})
+	})
+
 	// create a new user
 	router.POST("/users", func(c *gin.Context) {
 		var newUser user.User
