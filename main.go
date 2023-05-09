@@ -84,6 +84,19 @@ func main() {
 		}
 	})
 
+	// list the users the user is following
+	router.GET("/following", func(c *gin.Context) {
+		username := c.Query("user")
+		if _, exists := users[username]; !exists {
+			c.JSON(http.StatusNotFound, gin.H{"error": "user does not exist"})
+		}
+		results := make([]string, 0)
+		for u := range following[username] {
+			results = append(results, u)
+		}
+		c.JSON(http.StatusOK, gin.H{"following": results})
+	})
+
 	router.POST("/follows", func(c *gin.Context) {
 		var f user.Follow
 		err := c.BindJSON(&f)
