@@ -1,147 +1,65 @@
 package main
 
 import (
-	"database/sql"
 	"fmt"
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
+	swaggerFiles "github.com/swaggo/files"
+	"github.com/weihesdlegend/mini_twitter/controller"
 	"github.com/weihesdlegend/mini_twitter/database"
+	_ "github.com/weihesdlegend/mini_twitter/docs"
 	"github.com/weihesdlegend/mini_twitter/tweet"
-	"github.com/weihesdlegend/mini_twitter/user"
-	"golang.org/x/crypto/bcrypt"
+	"github.com/weihesdlegend/mini_twitter/util"
 	"net/http"
 	"os"
+
+	ginSwagger "github.com/swaggo/gin-swagger"
 )
 
 const (
 	UserDoesNotExist = "user %s does not exist"
 )
 
-var tweets map[string]*tweet.UserTweets  // user to tweets
-var users map[string]user.User           // user details
-var following map[string]map[string]bool // user to users the user is following
+// @title User API documentation
+// @version 1.0.0
 
+// @host localhost:8800
+// @BasePath /
 func main() {
-	tweets = make(map[string]*tweet.UserTweets)
-	users = make(map[string]user.User)
-	following = make(map[string]map[string]bool)
 	router := gin.Default()
 
-	dbName := "mini-twitter.db"
-	_, err := os.Stat(dbName)
-	if os.IsNotExist(err) {
-		_, creationErr := os.Create(dbName)
-		checkFatal(creationErr)
-	}
-
-	db, dbConnectionErr := sql.Open("sqlite3", dbName)
-	checkFatal(dbConnectionErr)
+	db, dbSetupErr := database.SetupDatabase()
+	util.CheckFatal(dbSetupErr)
+	database.DB = db
 
 	// create tables if not already exist
 	userTableCreationErr := database.CreateUsersTable(db)
-	checkErr(userTableCreationErr)
+	util.CheckErr(userTableCreationErr)
 
 	tweetsTableCreationErr := database.CreateTweetsTable(db)
-	checkErr(tweetsTableCreationErr)
+	util.CheckErr(tweetsTableCreationErr)
 
 	followsTableCreationErr := database.CreateFollowsTable(db)
-	checkErr(followsTableCreationErr)
+	util.CheckErr(followsTableCreationErr)
 
-	checkErr(database.LoadUsers(db, users, tweets, following))
+	util.CheckErr(database.LoadUsers(db, database.Users, database.Tweets, database.Following))
 
 	log.Info("starting server")
 
-	router.GET("/users", func(c *gin.Context) {
-		var usernames []string
-		for name := range users {
-			usernames = append(usernames, name)
-		}
-		c.JSON(http.StatusOK, gin.H{"users": usernames})
-	})
+	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
 
-	// create a new user
-	router.POST("/users", func(c *gin.Context) {
-		var newUser user.User
-		err := c.BindJSON(&newUser)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		} else if _, ok := users[newUser.Username]; ok {
-			c.JSON(http.StatusSeeOther, gin.H{"error": "user already exists"})
-		} else {
-			encodedPsw, _ := bcrypt.GenerateFromPassword([]byte(newUser.Password), bcrypt.DefaultCost)
-			newUser.Password = string(encodedPsw)
-			users[newUser.Username] = newUser // make sure keys and usernames in records are the same
-
-			// create an empty slice when creating user so after an API verifies the user exists
-			// it does not to further check the tweets table
-			tweets[newUser.Username] = &tweet.UserTweets{Tweets: make(map[string]*tweet.Tweet)}
-
-			// persist user in database
-			checkErr(database.CreateUser(db, newUser))
-
-			c.JSON(http.StatusCreated, gin.H{"user created": newUser.Username})
-		}
-	})
-
-	// list the users the user is following
-	router.GET("/following", func(c *gin.Context) {
-		username := c.Query("user")
-		if _, exists := users[username]; !exists {
-			c.JSON(http.StatusNotFound, gin.H{"error": "user does not exist"})
-		}
-		results := make([]string, 0)
-		for u := range following[username] {
-			results = append(results, u)
-		}
-		c.JSON(http.StatusOK, gin.H{"following": results})
-	})
-
-	router.POST("/follows", func(c *gin.Context) {
-		var f user.Follow
-		err := c.BindJSON(&f)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		} else if err = follow(f); err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		} else {
-			checkErr(database.CreateFollow(db, f))
-			c.JSON(http.StatusOK, fmt.Sprintf("%s is following %s", f.From, f.To))
-		}
-	})
-
-	router.POST("/unfollows", func(c *gin.Context) {
-		var f user.Follow
-		err := c.BindJSON(&f)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		} else if err = unfollow(f); err != nil {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		} else {
-			checkErr(database.UnfollowUser(db, f))
-			c.JSON(http.StatusOK, fmt.Sprintf("%s unfollowed %s", f.From, f.To))
-		}
-	})
+	userRouterGroup := router.Group("/users")
+	{
+		userRouterGroup.POST("/follow", controller.FollowUser)
+		userRouterGroup.POST("/unfollow", controller.UnfollowUser)
+		userRouterGroup.POST("/create", controller.CreateUser)
+		userRouterGroup.GET("/names", controller.GetAllUsernames)
+		userRouterGroup.GET("/following", controller.GetUserFollowing)
+	}
 
 	// create new tweet post
-	router.POST("/tweets", func(c *gin.Context) {
-		var newPost tweet.Tweet
-		err := c.BindJSON(&newPost)
-		if err != nil {
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		} else if _, userExists := users[newPost.User]; !userExists {
-			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf(UserDoesNotExist, newPost.User)})
-		} else if err, newTweet := postTweet(newPost.User, newPost.Text); err == nil {
-			err = database.CreateTweet(db, newTweet, tweets)
-			if err != nil {
-				c.JSON(http.StatusInternalServerError, gin.H{"err": err.Error()})
-				return
-			}
-			c.JSON(http.StatusOK, gin.H{"result": "Tweet post success!"})
-		} else {
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		}
-	})
+	router.POST("/tweets", controller.CreateTweet)
 
 	router.DELETE("/tweets/:id", func(c *gin.Context) {
 		id := c.Param("id")
@@ -149,10 +67,10 @@ func main() {
 		if u == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "user name cannot be empty"})
 		}
-		if _, ok := tweets[u].Tweets[id]; !ok {
+		if _, ok := database.Tweets[u].Tweets[id]; !ok {
 			c.JSON(http.StatusUnauthorized, gin.H{"error": "only tweet owner can delete the tweet"})
 		}
-		if err = database.DeleteTweet(db, id, tweets, u); err != nil {
+		if err := database.DeleteTweet(db, id, database.Tweets, u); err != nil {
 			log.Error(err)
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "error while deleting tweet: " + err.Error()})
 		}
@@ -164,11 +82,11 @@ func main() {
 		username := c.Param("username")
 		if username == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "user name not specified"})
-		} else if _, ok := users[username]; !ok {
+		} else if _, ok := database.Users[username]; !ok {
 			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf(UserDoesNotExist, username)})
 		} else {
 			ts := make([]*tweet.Tweet, 0)
-			for _, t := range tweets[username].Tweets {
+			for _, t := range database.Tweets[username].Tweets {
 				ts = append(ts, t)
 			}
 			tweet.By(tweet.SortByCreationTime).Sort(ts)
@@ -180,7 +98,7 @@ func main() {
 		username := c.Param("username")
 		if username == "" {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "user name not specified"})
-		} else if _, ok := users[username]; !ok {
+		} else if _, ok := database.Users[username]; !ok {
 			c.JSON(http.StatusNotFound, gin.H{"error": fmt.Sprintf(UserDoesNotExist, username)})
 		} else {
 			timeline := GetTimeLine(username)

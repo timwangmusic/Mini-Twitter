@@ -1,14 +1,14 @@
-package main
+package util
 
 import log "github.com/sirupsen/logrus"
 
-func checkErr(err error) {
+func CheckErr(err error) {
 	if err != nil {
 		log.Error(err)
 	}
 }
 
-func checkFatal(err error) {
+func CheckFatal(err error) {
 	if err != nil {
 		log.Fatal(err)
 	}
