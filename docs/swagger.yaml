@@ -1,0 +1,178 @@
+basePath: /
+definitions:
+  tweet.Tweet:
+    properties:
+      created_at:
+        type: string
+      id:
+        type: string
+      text:
+        type: string
+      user:
+        type: string
+    type: object
+  user.Follow:
+    properties:
+      from:
+        type: string
+      to:
+        type: string
+    required:
+    - from
+    - to
+    type: object
+  user.User:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+      username:
+        type: string
+    required:
+    - password
+    - username
+    type: object
+host: localhost:8800
+info:
+  contact: {}
+  title: User API documentation
+  version: 1.0.0
+paths:
+  /tweets:
+    post:
+      consumes:
+      - application/json
+      description: Create a new tweet for a user
+      parameters:
+      - description: Tweet Data
+        in: body
+        name: follow
+        required: true
+        schema:
+          $ref: '#/definitions/tweet.Tweet'
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+        "500":
+          description: Internal Server Error
+      summary: Create a new tweet for a user
+      tags:
+      - Tweet
+  /users/create:
+    post:
+      consumes:
+      - application/json
+      description: Create a new user
+      parameters:
+      - description: User Data
+        in: body
+        name: user
+        required: true
+        schema:
+          $ref: '#/definitions/user.User'
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "303":
+          description: See Other
+        "400":
+          description: Bad Request
+      summary: Create a new user
+      tags:
+      - User
+  /users/follow:
+    post:
+      consumes:
+      - application/json
+      description: Follow a user
+      parameters:
+      - description: Follow Data
+        in: body
+        name: follow
+        required: true
+        schema:
+          $ref: '#/definitions/user.Follow'
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      summary: Follow a user
+      tags:
+      - User
+  /users/following:
+    get:
+      description: List all Users a user is Following
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/user.User'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            type: object
+      summary: List all Users a user is Following
+      tags:
+      - User
+  /users/names:
+    get:
+      description: Get all the known usernames
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+      summary: Get all the known usernames
+      tags:
+      - User
+  /users/unfollow:
+    post:
+      consumes:
+      - application/json
+      description: Unfollow a user
+      parameters:
+      - description: Follow Data
+        in: body
+        name: follow
+        required: true
+        schema:
+          $ref: '#/definitions/user.Follow'
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              type: string
+            type: array
+        "400":
+          description: Bad Request
+        "404":
+          description: Not Found
+      summary: Unfollow a user
+      tags:
+      - User
+swagger: "2.0"

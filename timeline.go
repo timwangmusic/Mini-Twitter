@@ -2,6 +2,7 @@ package main
 
 import (
 	"container/heap"
+	"github.com/weihesdlegend/mini_twitter/database"
 	"github.com/weihesdlegend/mini_twitter/tweet"
 )
 
@@ -11,16 +12,16 @@ func GetTimeLine(user string) (timeline []tweet.Tweet) {
 	pq := &tweet.PriorityQueue{}
 
 	userTweetIdxMap := make(map[string]int) // user to tweet index mapping
-	followingUsers, _ := following[user]
+	followingUsers, _ := database.Following[user]
 
 	tweetsPerUser := make(map[string][]*tweet.Tweet)
 	for u := range followingUsers {
 		if _, ok := tweetsPerUser[u]; !ok {
 			tweetsPerUser[u] = make([]*tweet.Tweet, 0)
 		}
-		if len(tweets[u].Tweets) > 0 {
+		if len(database.Tweets[u].Tweets) > 0 {
 			userTweetIdxMap[u] = 0
-			for _, t := range tweets[u].Tweets {
+			for _, t := range database.Tweets[u].Tweets {
 				tweetsPerUser[u] = append(tweetsPerUser[u], t)
 			}
 			tweet.By(tweet.SortByCreationTime).Sort(tweetsPerUser[u])
