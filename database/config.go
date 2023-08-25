@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"github.com/weihesdlegend/mini_twitter/tweet"
 	"github.com/weihesdlegend/mini_twitter/user"
+	"github.com/weihesdlegend/mini_twitter/util"
 	"os"
 )
 
@@ -29,6 +30,18 @@ func SetupDatabase() (*sql.DB, error) {
 	if dbConnectionErr != nil {
 		return nil, dbConnectionErr
 	}
+
+	// create tables if not already exist
+	userTableCreationErr := CreateUsersTable(db)
+	util.CheckErr(userTableCreationErr)
+
+	tweetsTableCreationErr := CreateTweetsTable(db)
+	util.CheckErr(tweetsTableCreationErr)
+
+	followsTableCreationErr := CreateFollowsTable(db)
+	util.CheckErr(followsTableCreationErr)
+
+	util.CheckErr(LoadUsers(db, Users, Tweets, Following))
 
 	return db, nil
 }

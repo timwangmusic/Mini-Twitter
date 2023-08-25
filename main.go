@@ -33,18 +33,6 @@ func main() {
 	util.CheckFatal(dbSetupErr)
 	database.DB = db
 
-	// create tables if not already exist
-	userTableCreationErr := database.CreateUsersTable(db)
-	util.CheckErr(userTableCreationErr)
-
-	tweetsTableCreationErr := database.CreateTweetsTable(db)
-	util.CheckErr(tweetsTableCreationErr)
-
-	followsTableCreationErr := database.CreateFollowsTable(db)
-	util.CheckErr(followsTableCreationErr)
-
-	util.CheckErr(database.LoadUsers(db, database.Users, database.Tweets, database.Following))
-
 	log.Info("starting server")
 
 	router.GET("/swagger/*any", ginSwagger.WrapHandler(swaggerFiles.Handler))
