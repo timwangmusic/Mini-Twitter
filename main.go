@@ -6,6 +6,7 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
 	swaggerFiles "github.com/swaggo/files"
+	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/weihesdlegend/mini_twitter/controller"
 	"github.com/weihesdlegend/mini_twitter/database"
 	_ "github.com/weihesdlegend/mini_twitter/docs"
@@ -13,8 +14,7 @@ import (
 	"github.com/weihesdlegend/mini_twitter/util"
 	"net/http"
 	"os"
-
-	ginSwagger "github.com/swaggo/gin-swagger"
+	"sort"
 )
 
 const (
@@ -77,7 +77,7 @@ func main() {
 			for _, t := range database.Tweets[username].Tweets {
 				ts = append(ts, t)
 			}
-			tweet.By(tweet.SortByCreationTime).Sort(ts)
+			sort.Slice(ts, func(i, j int) bool { return ts[i].CreatedAt.After(ts[j].CreatedAt) })
 			c.JSON(http.StatusOK, gin.H{"tweets": ts})
 		}
 	})

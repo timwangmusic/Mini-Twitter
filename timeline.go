@@ -4,6 +4,7 @@ import (
 	"container/heap"
 	"github.com/weihesdlegend/mini_twitter/database"
 	"github.com/weihesdlegend/mini_twitter/tweet"
+	"sort"
 )
 
 func GetTimeLine(user string) (timeline []tweet.Tweet) {
@@ -24,7 +25,7 @@ func GetTimeLine(user string) (timeline []tweet.Tweet) {
 			for _, t := range database.Tweets[u].Tweets {
 				tweetsPerUser[u] = append(tweetsPerUser[u], t)
 			}
-			tweet.By(tweet.SortByCreationTime).Sort(tweetsPerUser[u])
+			sort.Slice(tweetsPerUser[u], func(i, j int) bool { return tweetsPerUser[u][i].CreatedAt.After(tweetsPerUser[u][j].CreatedAt) })
 			heap.Push(pq, *tweetsPerUser[u][0])
 		}
 	}
