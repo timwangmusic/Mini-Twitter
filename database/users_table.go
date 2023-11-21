@@ -8,7 +8,7 @@ import (
 )
 
 func CreateUsersTable(db *sql.DB) error {
-	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS Users (username TEXT PRIMARY KEY, password TEXT, email TEXT)")
+	stmt, err := db.Prepare("CREATE TABLE IF NOT EXISTS Users (username TEXT PRIMARY KEY, password TEXT, email TEXT, level TEXT)")
 	if err != nil {
 		return err
 	}
@@ -25,12 +25,12 @@ func CreateUsersTable(db *sql.DB) error {
 }
 
 func CreateUser(db *sql.DB, user user.User) error {
-	stmt, err := db.Prepare("INSERT INTO Users (username, password, email) values (?,?,?)")
+	stmt, err := db.Prepare("INSERT INTO Users (username, password, email, level) values (?,?,?,?)")
 	if err != nil {
 		return err
 	}
 
-	_, err = stmt.Exec(user.Username, user.Password, user.Email)
+	_, err = stmt.Exec(user.Username, user.Password, user.Email, user.Level)
 	return err
 }
 
@@ -44,14 +44,16 @@ func LoadUsers(db *sql.DB, users map[string]user.User, tweets map[string]*tweet.
 	var username string
 	var password string
 	var email string
+	var level user.Level
 	for rows.Next() {
-		if err := rows.Scan(&username, &password, &email); err != nil {
+		if err := rows.Scan(&username, &password, &email, &level); err != nil {
 			log.Error(err)
 		} else {
 			users[username] = user.User{
 				Username: username,
 				Password: password,
 				Email:    email,
+				Level:    level,
 			}
 			tweets[username] = &tweet.UserTweets{
 				Tweets: make(map[string]*tweet.Tweet),

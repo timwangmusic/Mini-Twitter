@@ -9,6 +9,7 @@ import (
 	"github.com/weihesdlegend/mini_twitter/util"
 	"golang.org/x/crypto/bcrypt"
 	"net/http"
+	"slices"
 )
 
 // CreateUser ... Create a new user
@@ -36,6 +37,10 @@ func CreateUser(c *gin.Context) {
 		// it does not to further check the Tweets table
 		database.Tweets[newUser.Username] = &tweet.UserTweets{Tweets: make(map[string]*tweet.Tweet)}
 
+		newUser.Level = user.RegularUser
+		if slices.Contains(database.Admins, newUser.Username) {
+			newUser.Level = user.AdminUser
+		}
 		// persist user in database
 		util.CheckErr(database.CreateUser(database.DB, newUser))
 

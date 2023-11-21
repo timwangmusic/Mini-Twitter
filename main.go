@@ -5,6 +5,7 @@ import (
 	"github.com/gin-gonic/gin"
 	_ "github.com/mattn/go-sqlite3"
 	log "github.com/sirupsen/logrus"
+	"github.com/spf13/viper"
 	swaggerFiles "github.com/swaggo/files"
 	ginSwagger "github.com/swaggo/gin-swagger"
 	"github.com/weihesdlegend/mini_twitter/controller"
@@ -19,7 +20,14 @@ import (
 
 const (
 	UserDoesNotExist = "user %s does not exist"
+
+	DefaultConfigPath     = "."
+	DefaultConfigFileName = "config"
 )
+
+type Config struct {
+	Admin []string `mapstructure:"admin"`
+}
 
 // @title User API documentation
 // @version 1.0.0
@@ -29,7 +37,22 @@ const (
 func main() {
 	router := gin.Default()
 
-	db, dbSetupErr := database.SetupDatabase()
+	viper.AddConfigPath(DefaultConfigPath)
+	viper.SetConfigType("yaml")
+	viper.SetConfigName(DefaultConfigFileName)
+	err := viper.ReadInConfig()
+	if err != nil {
+		log.Fatalf("failed to read config: %s", err.Error())
+	}
+
+	var config Config
+	if err = viper.Unmarshal(&config); err != nil {
+		log.Fatalf("failed to unmarshal into config: %s", err.Error())
+	}
+
+	log.Debugf("admin users are: %+v", config.Admin)
+
+	db, dbSetupErr := database.SetupDatabase(config.Admin)
 	util.CheckFatal(dbSetupErr)
 	database.DB = db
 

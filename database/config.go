@@ -14,11 +14,13 @@ var DB *sql.DB
 var Following map[string]map[string]bool // user to users the user is Following
 var Users map[string]user.User           // user details
 var Tweets map[string]*tweet.UserTweets  // user to Tweets
+var Admins []string                      // users with administrator access
 
-func SetupDatabase() (*sql.DB, error) {
+func SetupDatabase(admins []string) (*sql.DB, error) {
 	Tweets = make(map[string]*tweet.UserTweets)
 	Users = make(map[string]user.User)
 	Following = make(map[string]map[string]bool)
+	Admins = admins
 
 	_, err := os.Stat(DefaultDatabaseName)
 	if os.IsNotExist(err) {
