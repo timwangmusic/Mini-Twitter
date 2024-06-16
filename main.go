@@ -15,6 +15,7 @@ import (
 	"github.com/weihesdlegend/mini_twitter/util"
 	"net/http"
 	"os"
+	"path"
 	"sort"
 )
 
@@ -22,7 +23,7 @@ const (
 	UserDoesNotExist = "user %s does not exist"
 
 	DefaultConfigPath     = "."
-	DefaultConfigFileName = "config"
+	DefaultConfigFileName = "config.yaml"
 )
 
 type Config struct {
@@ -36,6 +37,15 @@ type Config struct {
 // @BasePath /
 func main() {
 	router := gin.Default()
+	if _, err := os.Stat(path.Join(DefaultConfigPath, DefaultConfigFileName)); err != nil {
+		log.Infof("Creating default config file at %s", path.Join(DefaultConfigPath, DefaultConfigFileName))
+		if os.IsNotExist(err) {
+			_, err = os.Create(path.Join(DefaultConfigPath, DefaultConfigFileName))
+			if err != nil {
+				log.Fatalf("failed to create config file: %s", DefaultConfigFileName)
+			}
+		}
+	}
 
 	viper.AddConfigPath(DefaultConfigPath)
 	viper.SetConfigType("yaml")
